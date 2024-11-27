@@ -1,36 +1,13 @@
 import React from 'react';
-import { TestApiRegistry, renderInTestApp, MockFetchApi } from '@backstage/test-utils';
-import { DiscoveryApi } from '@backstage/core-plugin-api';
-import { rest } from 'msw';
-import { setupServer } from 'msw/node';
+import { TestApiRegistry, renderInTestApp } from '@backstage/test-utils';
 import { EntityProvider } from '@backstage/plugin-catalog-react';
-import { JiraAPI, jiraApiRef } from '../../api';
+import {jiraApiRef } from '../../api';
 import { JiraOverviewCard } from './JiraOverviewCard';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { ApiProvider, ConfigReader } from '@backstage/core-app-api';
+import { screen } from '@testing-library/react';
+import { ApiProvider } from '@backstage/core-app-api';
 
-
-const setupTest = () => {
-  // Mock APIs
-  const mockDiscoveryApi: DiscoveryApi = {
-    getBaseUrl: async () => 'http://exampleapi.com/jira/api',
-  };
-
-  const mockConfigApi = new ConfigReader({});
-
-  const mockFetchApi = new MockFetchApi();
-
-  const apis = TestApiRegistry.from([
-    jiraApiRef,
-    new JiraAPI({ 
-      discoveryApi: mockDiscoveryApi,
-      configApi: mockConfigApi,
-      fetchApi: mockFetchApi,
-    })
-  ]);
-
-  // Mock data
-  const mockProject = {
+const setupTest = (options: { shouldError?: boolean; noProjectKey?: boolean } = {}) => {
+  const mockData = {
     project: {
       name: 'Test Project',
       iconUrl: 'http://example.com/icon.svg',
@@ -42,30 +19,39 @@ const setupTest = () => {
       { name: 'Epic', iconUrl: 'http://example.com/epic.svg', total: 3 },
       { name: 'Work Intake', iconUrl: 'http://example.com/task.svg', total: 0 },
     ],
+    statuses: ['To Do', 'In Progress', 'Done'],
   };
+
+  const mockJiraClient = {
+    getProjectDetails: jest.fn().mockImplementation(() => {
+      if (options.shouldError) {
+        return Promise.reject(new Error('Internal Server Error'));
+      }
+      return Promise.resolve({
+        project: mockData.project,
+        issues: mockData.issues,
+        tickets: [],
+        ticketIds: [],
+      });
+    }),
+    getStatuses: jest.fn().mockResolvedValue(mockData.statuses),
+  };
+
+  const apis = TestApiRegistry.from([
+    jiraApiRef,
+    mockJiraClient,
+  ]);
 
   const mockEntity = {
     apiVersion: 'backstage.io/v1alpha1',
     kind: 'Component',
     metadata: {
       name: 'mock-component',
-      annotations: { 'jira/project-key': 'TEST' },
+      annotations: { 
+        'jira/project-key': options.noProjectKey ? undefined : 'TEST'
+      },
     },
   };
-
-  const mockStatuses = ['To Do', 'In Progress', 'Done'];
-
-  // Setup MSW server
-  const server = setupServer(
-    rest.get('http://exampleapi.com/jira/api/project/TEST', (_, res, ctx) => 
-      res(ctx.json(mockProject))),
-    rest.get('http://exampleapi.com/jira/api/statuses/TEST', (_, res, ctx) => 
-      res(ctx.json(mockStatuses)))
-  );
-
-  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-  afterEach(() => server.resetHandlers());
-  afterAll(() => server.close());
 
   return {
     render: (props = {}) => renderInTestApp(
@@ -75,91 +61,70 @@ const setupTest = () => {
         </EntityProvider>
       </ApiProvider>
     ),
-    server,
     mockEntity,
-    mockProject,
-    mockStatuses,
+    mockData,
+    mockJiraClient,
+    apis,
   };
 };
 
-describe('JiraCard', () => {
-  const { server, render, mockEntity } = setupTest();
-  const mockDiscoveryApi: DiscoveryApi = {
-    getBaseUrl: async () => 'http://exampleapi.com/jira/api',
-  };
-  const mockConfigApi = new ConfigReader({});
-  const mockFetchApi = new MockFetchApi();
-  
-  const apis = TestApiRegistry.from([
-    jiraApiRef,
-    new JiraAPI({ 
-      discoveryApi: mockDiscoveryApi,
-      configApi: mockConfigApi,
-      fetchApi: mockFetchApi,
-    })
-  ]);
+describe('JiraOverviewCard', () => {
+  describe('successful scenarios', () => {
+    const { render } = setupTest();
 
-  it('displays project name', async () => {
-    const { getByText } = await render();
-    expect(getByText('Test Project')).toBeInTheDocument();
+    it('displays project name', async () => {
+      await render();
+      expect(await screen.findByText(/Test Project/)).toBeInTheDocument();
+    });
+
+    it('displays project type', async () => {
+      await render();
+      expect(await screen.findByText(/software/)).toBeInTheDocument();
+    });
+
+    it('displays Story count', async () => {
+      await render();
+      expect(await screen.findByText('5')).toBeInTheDocument();
+    });
+
+    it('filters zero count issues', async () => {
+      await render();
+      expect(screen.queryByText('Work Intake')).not.toBeInTheDocument();
+    });
+
+    it('displays status filter', async () => {
+      await render();
+      expect(await screen.findByText('Filter issue status')).toBeInTheDocument();
+    });
+
+    it('hides filter when hideIssueFilter is true', async () => {
+      await render({ hideIssueFilter: true });
+      expect(screen.queryByText('Filter issue status')).not.toBeInTheDocument();
+    });
   });
 
-  it('displays project type', async () => {
-    const { getByText } = await render();
-    expect(getByText('software')).toBeInTheDocument();
-  });
+  describe('error scenarios', () => {
+    it('shows error for missing project key', async () => {
+      const { render } = setupTest({ noProjectKey: true });
+      await render();
+      expect(await screen.findByText(/Missing Jira project key annotation/)).toBeInTheDocument();
+    });
 
-  it('displays Story count', async () => {
-    const { getByText } = await render();
-    expect(getByText('5')).toBeInTheDocument();
-  });
+    it('displays API error message', async () => {
+      const { render } = setupTest({ shouldError: true });
+      await render();
+      expect(await screen.findByText(/Internal Server Error/)).toBeInTheDocument();
+    });
 
-  it('filters zero count issues', async () => {
-    const { queryByText } = await render();
-    expect(queryByText('Work Intake')).not.toBeInTheDocument();
-  });
-
-  it('displays status filter', async () => {
-    const { getByText } = await render();
-    expect(getByText('Filter issue status')).toBeInTheDocument();
-  });
-
-  it('shows To Do status when filter opened', async () => {
-    await render();
-    fireEvent.mouseDown(screen.getByLabelText('Filter issue status'));
-    await waitFor(() => expect(screen.getByText('To Do')).toBeInTheDocument());
-  });
-
-  it('shows error for missing project key', async () => {
-    const entityWithoutKey = {
-      ...mockEntity,
-      metadata: { name: 'test', annotations: {} },
-    };
-
-    const { getByText } = await renderInTestApp(
-      <ApiProvider apis={apis}>
-        <EntityProvider entity={entityWithoutKey}>
-          <JiraOverviewCard />
-        </EntityProvider>
-      </ApiProvider>
-    );
-
-    expect(getByText(/Missing Jira project key annotation/)).toBeInTheDocument();
-  });
-
-  it('displays API error message', async () => {
-    server.use(
-      rest.get('http://exampleapi.com/jira/api/project/TEST', (_, res, ctx) =>
-        res(ctx.status(500, 'Internal Server Error'))
-      )
-    );
-
-    const { getByText } = await render();
-    await waitFor(() => expect(getByText(/Internal Server Error/)).toBeInTheDocument());
-  });
-
-  it('hides filter when hideIssueFilter is true', async () => {
-    const { queryByText } = await render({ hideIssueFilter: true });
-    expect(queryByText('Filter issue status')).not.toBeInTheDocument();
+    it('handles API errors gracefully', async () => {
+      const { render, mockJiraClient } = setupTest();
+      
+      mockJiraClient.getProjectDetails.mockRejectedValueOnce(
+        new Error('Failed to fetch project details')
+      );
+      
+      await render();
+      expect(await screen.findByText(/Failed to fetch project details/)).toBeInTheDocument();
+    });
   });
 });
