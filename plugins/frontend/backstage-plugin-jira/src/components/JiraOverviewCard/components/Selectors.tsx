@@ -24,6 +24,7 @@ import {
   ListItemText,
   MenuItem,
   Select,
+  Alert,
 } from '@material-ui/core';
 import { useStatuses } from '../../../hooks';
 import { SelectorsProps } from '../../../types';
@@ -46,7 +47,7 @@ export const Selectors = ({
   setStatusesNames,
   fetchProjectInfo,
 }: SelectorsProps) => {
-  const { statuses, statusesLoading, statusesError } = useStatuses(projectKey);
+  const { statuses, loading, error, refresh } = useStatuses(projectKey);
   const analytics = useAnalytics();
 
   const handleStatusesChange = (
@@ -58,10 +59,19 @@ export const Selectors = ({
       analytics.captureEvent('filter', _statusNames.filter(Boolean).join(', '));
   };
 
-  return !statusesLoading &&
-    !statusesError &&
-    statuses &&
-    statuses.length >= 2 ? (
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        {error.message}
+      </Alert>
+    );
+  }
+
+  if (loading || !statuses || statuses.length < 2) {
+    return null;
+  }
+
+  return (
     <Box
       sx={{
         display: 'flex',
@@ -69,7 +79,7 @@ export const Selectors = ({
       }}
     >
       <FormControl
-        style={{
+        sx={{
           minWidth: 150,
         }}
       >
@@ -87,7 +97,10 @@ export const Selectors = ({
             (selected as Array<string>).filter(Boolean).join(', ')
           }
           MenuProps={MenuProps}
-          onClose={fetchProjectInfo}
+          onClose={() => {
+            fetchProjectInfo();
+            refresh();
+          }}
         >
           {statuses.map(status => (
             <MenuItem key={status} value={status}>
@@ -98,5 +111,5 @@ export const Selectors = ({
         </Select>
       </FormControl>
     </Box>
-  ) : null;
+  );
 };
