@@ -1,16 +1,35 @@
-import { TestApiRegistry, renderInTestApp } from '@backstage/test-utils';
+import React from 'react';
+import { TestApiRegistry, renderInTestApp, MockFetchApi } from '@backstage/test-utils';
+import { DiscoveryApi } from '@backstage/core-plugin-api';
 import { rest } from 'msw';
 import { setupServer } from 'msw/node';
 import { EntityProvider } from '@backstage/plugin-catalog-react';
 import { JiraAPI, jiraApiRef } from '../../api';
 import { JiraOverviewCard } from './JiraOverviewCard';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { ApiProvider, ConfigReader } from '@backstage/core-app-api';
+
 
 const setupTest = () => {
-  const discoveryApi = {
-    getBaseUrl: () => Promise.resolve('http://exampleapi.com/jira/api'),
+  // Mock APIs
+  const mockDiscoveryApi: DiscoveryApi = {
+    getBaseUrl: async () => 'http://exampleapi.com/jira/api',
   };
 
+  const mockConfigApi = new ConfigReader({});
+
+  const mockFetchApi = new MockFetchApi();
+
+  const apis = TestApiRegistry.from([
+    jiraApiRef,
+    new JiraAPI({ 
+      discoveryApi: mockDiscoveryApi,
+      configApi: mockConfigApi,
+      fetchApi: mockFetchApi,
+    })
+  ]);
+
+  // Mock data
   const mockProject = {
     project: {
       name: 'Test Project',
@@ -35,8 +54,8 @@ const setupTest = () => {
   };
 
   const mockStatuses = ['To Do', 'In Progress', 'Done'];
-  const apis = TestApiRegistry.from([[jiraApiRef, new JiraAPI({ discoveryApi })]]);
-  
+
+  // Setup MSW server
   const server = setupServer(
     rest.get('http://exampleapi.com/jira/api/project/TEST', (_, res, ctx) => 
       res(ctx.json(mockProject))),
@@ -50,11 +69,11 @@ const setupTest = () => {
 
   return {
     render: (props = {}) => renderInTestApp(
-      <TestApiRegistry apis={apis}>
+      <ApiProvider apis={apis}>
         <EntityProvider entity={mockEntity}>
           <JiraOverviewCard {...props} />
         </EntityProvider>
-      </TestApiRegistry>
+      </ApiProvider>
     ),
     server,
     mockEntity,
@@ -65,6 +84,20 @@ const setupTest = () => {
 
 describe('JiraCard', () => {
   const { server, render, mockEntity } = setupTest();
+  const mockDiscoveryApi: DiscoveryApi = {
+    getBaseUrl: async () => 'http://exampleapi.com/jira/api',
+  };
+  const mockConfigApi = new ConfigReader({});
+  const mockFetchApi = new MockFetchApi();
+  
+  const apis = TestApiRegistry.from([
+    jiraApiRef,
+    new JiraAPI({ 
+      discoveryApi: mockDiscoveryApi,
+      configApi: mockConfigApi,
+      fetchApi: mockFetchApi,
+    })
+  ]);
 
   it('displays project name', async () => {
     const { getByText } = await render();
@@ -104,11 +137,11 @@ describe('JiraCard', () => {
     };
 
     const { getByText } = await renderInTestApp(
-      <TestApiRegistry apis={TestApiRegistry.from([[jiraApiRef, new JiraAPI({ discoveryApi: {} })]])}>
+      <ApiProvider apis={apis}>
         <EntityProvider entity={entityWithoutKey}>
           <JiraOverviewCard />
         </EntityProvider>
-      </TestApiRegistry>
+      </ApiProvider>
     );
 
     expect(getByText(/Missing Jira project key annotation/)).toBeInTheDocument();
