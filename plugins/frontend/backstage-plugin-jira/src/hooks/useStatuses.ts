@@ -17,8 +17,14 @@
 import { useCallback } from 'react';
 import { useApi } from '@backstage/core-plugin-api';
 import { useAsync } from 'react-use';
-import { handleError } from './utils';
 import { jiraApiRef } from '../api';
+
+const handleError = (error: Error | unknown) => {
+  if (error instanceof Error) {
+    return Promise.reject({ message: error.message });
+  }
+  return Promise.reject({ message: String(error) });
+};
 
 export const useStatuses = (projectKey: string) => {
   const api = useApi(jiraApiRef);
