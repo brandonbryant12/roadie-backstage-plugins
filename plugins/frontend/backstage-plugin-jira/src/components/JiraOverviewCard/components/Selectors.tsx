@@ -24,20 +24,10 @@ import {
   ListItemText,
   MenuItem,
   Select,
-  createStyles,
-  makeStyles,
 } from '@material-ui/core';
 import { useStatuses } from '../../../hooks';
 import { SelectorsProps } from '../../../types';
 import { useAnalytics } from '@backstage/core-plugin-api';
-
-const useStyles = makeStyles(() =>
-  createStyles({
-    formControl: {
-      minWidth: 150,
-    },
-  }),
-);
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -56,7 +46,6 @@ export const Selectors = ({
   setStatusesNames,
   fetchProjectInfo,
 }: SelectorsProps) => {
-  const classes = useStyles();
   const { statuses, statusesLoading, statusesError } = useStatuses(projectKey);
   const analytics = useAnalytics();
 
@@ -69,13 +58,21 @@ export const Selectors = ({
       analytics.captureEvent('filter', _statusNames.filter(Boolean).join(', '));
   };
 
-  // Show selector only when needed
   return !statusesLoading &&
     !statusesError &&
     statuses &&
     statuses.length >= 2 ? (
-    <Box display="flex" justifyContent="flex-start">
-      <FormControl className={classes.formControl}>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'flex-start',
+      }}
+    >
+      <FormControl
+        style={{
+          minWidth: 150,
+        }}
+      >
         <InputLabel id="select-multiple-projects-statuses">
           Filter issue status
         </InputLabel>

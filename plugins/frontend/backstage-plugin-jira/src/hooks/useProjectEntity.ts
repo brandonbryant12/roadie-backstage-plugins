@@ -22,6 +22,7 @@ import {
   JIRA_PROJECT_KEY_ANNOTATION,
 } from '../constants';
 
+
 export const useProjectEntity = (entity: Entity) => {
   return {
     projectKey: entity.metadata?.annotations?.[

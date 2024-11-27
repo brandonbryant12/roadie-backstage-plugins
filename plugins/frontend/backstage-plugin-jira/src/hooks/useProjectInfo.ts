@@ -17,13 +17,20 @@
 import { useEffect, useCallback } from 'react';
 import { useApi } from '@backstage/core-plugin-api';
 import { useAsyncFn } from 'react-use';
-import { handleError } from './utils';
+
 import { jiraApiRef } from '../api';
 
+const handleError = (error: Error | unknown) => {
+  if (error instanceof Error) {
+    return Promise.reject({ message: error.message });
+  }
+  return Promise.reject({ message: String(error) });
+};
+
 export const useProjectInfo = (
-  projectKey: string,
-  component: string,
-  label: string,
+  projectKey: string | undefined,
+  component: string | undefined,
+  label: string | undefined,
   statusesNames: Array<string>,
 ) => {
   const api = useApi(jiraApiRef);
@@ -32,9 +39,9 @@ export const useProjectInfo = (
     try {
       setTimeout(() => (document.activeElement as HTMLElement).blur(), 0);
       return await api.getProjectDetails(
-        projectKey,
-        component,
-        label,
+        projectKey ?? '',
+        component ?? '',
+        label ?? '',
         statusesNames,
       );
     } catch (err: any) {

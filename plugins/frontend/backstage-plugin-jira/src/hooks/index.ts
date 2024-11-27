@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-export { useActivityStream } from './useActivityStream';
 export { useProjectInfo } from './useProjectInfo';
 export { useUserInfo } from './useUserInfo';
 export { useStatuses } from './useStatuses';
 export { useProjectEntity } from './useProjectEntity';
+
