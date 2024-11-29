@@ -4,35 +4,40 @@ import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
-import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+import Typography from '@material-ui/core/Typography';
 import { Theme } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
+import { HeaderActionMenu } from '@backstage/core-components';
 import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((_: Theme) => ({
   separator: {
-    margin: '0 8px',
     color: ({ isDark }: { isDark: boolean }) => 
-      isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-  },
-  titleText: {
-    marginRight: '8px',
+      isDark ? '#FFFFFF' : '#000000',
   },
   cardContent: {
     flexGrow: 1,
     overflowY: 'auto',
-    fontFamily: 'Roboto',
-    padding: '24px',
+    fontSize: '16px',
   },
   cardHeader: {
     '& .MuiCardHeader-content': {
       overflow: 'hidden',
     },
+    '& .MuiCardHeader-subheader': {
+      color: ({ isDark }: { isDark: boolean }) =>
+        isDark ? '#B6B6B6' : '#5C5C5C',
+    },
+  },
+  sourceText: {
+    fontSize: '18px',
+    fontWeight: 'normal',
+    color: ({ isDark }: { isDark: boolean }) =>
+      isDark ? '#B6B6B6' : '#5C5C5C',
   }
 }));
 
@@ -64,18 +69,8 @@ export const CustomInfoCard = ({
   const theme = useTheme();
   const isDarkTheme = theme?.palette?.type === 'dark';
   const classes = useStyles({ isDark: isDarkTheme });
-  const borderColor = isDarkTheme ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
-
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const borderColor = isDarkTheme ? '#FFFFFF' : '#000000';
   const [sourceMenuAnchor, setSourceMenuAnchor] = useState<null | HTMLElement>(null);
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
 
   const handleSourceMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setSourceMenuAnchor(event.currentTarget);
@@ -85,6 +80,11 @@ export const CustomInfoCard = ({
     setSourceMenuAnchor(null);
   };
 
+  const menuItems = menuActions.map(action => ({
+    label: action.label,
+    onClick: action.onClick,
+  }));
+
   const renderDataSourceNames = () => {
     if (!dataSources.length) return null;
     return (
@@ -92,16 +92,17 @@ export const CustomInfoCard = ({
         sx={{
           display: 'flex',
           alignItems: 'center',
-          fontSize: '18px',
-          fontWeight: 'normal',
-          color: isDarkTheme ? '#b6b6b6' : '#5C5C5C',
         }}
       >
-        <span className={classes.separator}>|</span>
+        <Typography className={classes.separator}>|</Typography>
         {dataSources.map((source, index) => (
           <React.Fragment key={source.name}>
-            {index > 0 && <span className={classes.separator}>|</span>}
-            {source.name}
+            {index > 0 && (
+              <Typography className={classes.separator}>|</Typography>
+            )}
+            <Typography className={classes.sourceText}>
+              {source.name}
+            </Typography>
           </React.Fragment>
         ))}
       </Box>
@@ -112,8 +113,8 @@ export const CustomInfoCard = ({
     if (!dataSources.length) return null;
     
     const buttonStyle = {
-      padding: '6px 16px',
-      borderRadius: '4px',
+      padding: theme.spacing(0.75, 2),
+      borderRadius: theme.shape.borderRadius,
       backgroundColor: isDarkTheme ? '#e8e8e8' : theme.palette.primary.main,
       color: isDarkTheme ? '#000000' : theme.palette.primary.contrastText,
     };
@@ -164,55 +165,33 @@ export const CustomInfoCard = ({
   return (
     <Card style={{
       border: `1px solid ${borderColor}`,
-      borderRadius: 4,
+      borderRadius: theme.shape.borderRadius,
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
+      maxWidth: 790,
     }}>
       <CardHeader
         className={classes.cardHeader}
         style={{
           borderBottom: `1px solid ${borderColor}`,
           height: '84px',
-          padding: '20px 24px',
+          padding: theme.spacing(2.5, 3),
         }}
         title={
           <Box sx={{
             display: 'flex',
             alignItems: 'center',
           }}>
-            <span className={classes.titleText}>{title}</span>
+            <Typography>
+              {title}
+            </Typography>
             {renderDataSourceNames()}
           </Box>
         }
         subheader={subheader}
-        action={
-          menuActions.length > 0 ? (
-            <IconButton aria-label="settings" onClick={handleMenuOpen}>
-              <MoreVertIcon />
-            </IconButton>
-          ) : null
-        }
+        action={menuActions.length > 0 ? <HeaderActionMenu actionItems={menuItems} /> : null}
       />
-      {menuActions.length > 0 && (
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-        >
-          {menuActions.map((action, index) => (
-            <MenuItem 
-              key={index}
-              onClick={() => {
-                action.onClick();
-                handleMenuClose();
-              }}
-            >
-              {action.label}
-            </MenuItem>
-          ))}
-        </Menu>
-      )}
 
       <CardContent className={classes.cardContent}>
         {children}
@@ -221,7 +200,7 @@ export const CustomInfoCard = ({
       <CardActions style={{
         borderTop: `1px solid ${borderColor}`,
         height: '84px',
-        padding: '24px',
+        padding: theme.spacing(3),
         justifyContent: 'flex-end',
       }}>
         <Box sx={{ marginLeft: 'auto' }}>
