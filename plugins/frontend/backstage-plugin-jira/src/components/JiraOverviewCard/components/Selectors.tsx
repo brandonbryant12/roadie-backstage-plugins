@@ -24,7 +24,6 @@ import {
   ListItemText,
   MenuItem,
   Select,
-  Alert,
 } from '@material-ui/core';
 import { useStatuses } from '../../../hooks';
 import { SelectorsProps } from '../../../types';

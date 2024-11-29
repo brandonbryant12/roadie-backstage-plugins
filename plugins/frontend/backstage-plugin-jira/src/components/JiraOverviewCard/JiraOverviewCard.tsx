@@ -4,15 +4,14 @@ import {
   Box,
   Grid,
   Typography,
-  Button,
 } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
-import { InfoCard, Progress } from '@backstage/core-components';
+import { Progress } from '@backstage/core-components';
 import { useEntity } from '@backstage/plugin-catalog-react';
 import { useProjectInfo } from '../../hooks';
 import { Status } from './components/Status';
 import { Selectors } from './components/Selectors';
-import ArrowForwardIcon from '@material-ui/icons/ArrowForward';
+import { CustomInfoCard } from '../CustomInfoCard/CustomInfoCard';
 
 const JIRA_PROJECT_KEY_ANNOTATION = 'jira/project-key';
 const JIRA_COMPONENT_ANNOTATION = 'jira/component';
@@ -76,33 +75,6 @@ const IssueTypesGrid = ({ issues }: { issues: IssueType[] | undefined }) => {
   );
 };
 
-const CardFooterContent = ({
-  projectUrl,
-  projectKey,
-}: {
-  projectUrl: string;
-  projectKey: string;
-}) => (
-  <Box
-    sx={{
-      position: 'absolute',
-      bottom: 0,
-      right: 0,
-      mt: 2,
-    }}
-  >
-    <Button
-      variant="outlined"
-      color="primary"
-      size="medium"
-      endIcon={<ArrowForwardIcon />}
-      href={`${projectUrl}/browse/${projectKey}`}
-      target="_blank"
-    >
-      Open in JIRA
-    </Button>
-  </Box>
-);
 
 export const JiraOverviewCard = ({ hideIssueFilter }: JiraCardOptionalProps) => {
   const { entity } = useEntity();
@@ -118,25 +90,20 @@ export const JiraOverviewCard = ({ hideIssueFilter }: JiraCardOptionalProps) => 
     projectLoading,
     projectError,
     fetchProjectInfo,
-  } = useProjectInfo(
-    projectKey,
-    component,
-    label,
-    statusesNames
-  );
+  } = useProjectInfo(projectKey, component, label, statusesNames);
 
   if (!projectKey) {
     return (
-      <InfoCard title="Jira">
+      <CustomInfoCard title="Jira">
         <Alert severity="error">
           Missing Jira project key annotation: {JIRA_PROJECT_KEY_ANNOTATION}
         </Alert>
-      </InfoCard>
+      </CustomInfoCard>
     );
   }
 
   return (
-    <InfoCard
+    <CustomInfoCard
       title="Jira"
       subheader={
         project && (
@@ -145,6 +112,7 @@ export const JiraOverviewCard = ({ hideIssueFilter }: JiraCardOptionalProps) => 
           </Box>
         )
       }
+      dataSources={project ? [{ source: `${project.url}/browse/${projectKey}`, name: 'JIRA' }] : []}
     >
       {projectLoading && !(project && issues) ? <Progress /> : null}
       {projectError ? (
@@ -168,12 +136,8 @@ export const JiraOverviewCard = ({ hideIssueFilter }: JiraCardOptionalProps) => 
             />
           )}
           <IssueTypesGrid issues={issues} />
-          <CardFooterContent 
-            projectUrl={project.url}
-            projectKey={projectKey}
-          />
         </Box>
       ) : null}
-    </InfoCard>
+    </CustomInfoCard>
   );
 };
