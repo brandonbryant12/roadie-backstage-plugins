@@ -1,18 +1,40 @@
 import React, { useState, ReactNode } from 'react';
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardActions,
-  IconButton,
-  Button,
-  Menu,
-  MenuItem,
-  Box,
-  useTheme,
-} from '@material-ui/core';
+import Box from '@material-ui/core/Box';
+import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
+import CardContent from '@material-ui/core/CardContent';
+import CardActions from '@material-ui/core/CardActions';
+import IconButton from '@material-ui/core/IconButton';
+import Button from '@material-ui/core/Button';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+import { Theme } from '@material-ui/core';
+import { useTheme } from '@material-ui/core/styles';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
+import { makeStyles } from '@material-ui/core/styles';
+
+const useStyles = makeStyles((_: Theme) => ({
+  separator: {
+    margin: '0 8px',
+    color: ({ isDark }: { isDark: boolean }) => 
+      isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+  },
+  titleText: {
+    marginRight: '8px',
+  },
+  cardContent: {
+    flexGrow: 1,
+    overflowY: 'auto',
+    fontFamily: 'Roboto',
+    padding: '24px',
+  },
+  cardHeader: {
+    '& .MuiCardHeader-content': {
+      overflow: 'hidden',
+    },
+  }
+}));
 
 interface DataSource {
   source: string;
@@ -40,11 +62,12 @@ export const CustomInfoCard = ({
   menuActions = [],
 }: CustomInfoCardProps) => {
   const theme = useTheme();
+  const isDarkTheme = theme?.palette?.type === 'dark';
+  const classes = useStyles({ isDark: isDarkTheme });
+  const borderColor = isDarkTheme ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [sourceMenuAnchor, setSourceMenuAnchor] = useState<null | HTMLElement>(null);
-
-  const isDarkTheme = theme?.palette?.type === 'dark';
-  const borderColor = isDarkTheme ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -72,16 +95,12 @@ export const CustomInfoCard = ({
           fontSize: '18px',
           fontWeight: 'normal',
           color: isDarkTheme ? '#b6b6b6' : '#5C5C5C',
-          '& .separator': {
-            margin: '0 8px',
-            color: borderColor,
-          },
         }}
       >
-        <span className="separator">|</span>
+        <span className={classes.separator}>|</span>
         {dataSources.map((source, index) => (
           <React.Fragment key={source.name}>
-            {index > 0 && <span className="separator">|</span>}
+            {index > 0 && <span className={classes.separator}>|</span>}
             {source.name}
           </React.Fragment>
         ))}
@@ -92,17 +111,19 @@ export const CustomInfoCard = ({
   const renderSourceButton = () => {
     if (!dataSources.length) return null;
     
+    const buttonStyle = {
+      padding: '6px 16px',
+      borderRadius: '4px',
+      backgroundColor: isDarkTheme ? '#e8e8e8' : theme.palette.primary.main,
+      color: isDarkTheme ? '#000000' : theme.palette.primary.contrastText,
+    };
+    
     if (dataSources.length === 1) {
       return (
         <Button
           variant="contained"
           onClick={() => window.open(dataSources[0].source, '_blank')}
-          style={{
-            padding: '6px 16px',
-            borderRadius: '4px',
-            backgroundColor: isDarkTheme ? '#e8e8e8' : theme.palette.primary.main,
-            color: isDarkTheme ? '#000000' : theme.palette.primary.contrastText,
-          }}
+          style={buttonStyle}
         >
           GO TO {dataSources[0].name.toUpperCase()}
         </Button>
@@ -115,12 +136,7 @@ export const CustomInfoCard = ({
           variant="contained"
           endIcon={<KeyboardArrowDownIcon />}
           onClick={handleSourceMenuOpen}
-          style={{
-            padding: '6px 16px',
-            borderRadius: '4px',
-            backgroundColor: isDarkTheme ? '#e8e8e8' : theme.palette.primary.main,
-            color: isDarkTheme ? '#000000' : theme.palette.primary.contrastText,
-          }}
+          style={buttonStyle}
         >
           SOURCES
         </Button>
@@ -146,38 +162,26 @@ export const CustomInfoCard = ({
   };
 
   return (
-    <Card
-      sx={{
-        border: `1px solid ${borderColor}`,
-        borderRadius: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-      }}
-    >
+    <Card style={{
+      border: `1px solid ${borderColor}`,
+      borderRadius: 4,
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+    }}>
       <CardHeader
-        sx={{
+        className={classes.cardHeader}
+        style={{
           borderBottom: `1px solid ${borderColor}`,
           height: '84px',
           padding: '20px 24px',
-          '& .MuiCardHeader-content': {
-            overflow: 'hidden',
-          },
-          '& .MuiCardHeader-subheader': {
-            color: isDarkTheme ? '#b6b6b6' : 'inherit',
-          },
         }}
         title={
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              '& .title-text': {
-                marginRight: '8px',
-              },
-            }}
-          >
-            <span className="title-text">{title}</span>
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+          }}>
+            <span className={classes.titleText}>{title}</span>
             {renderDataSourceNames()}
           </Box>
         }
@@ -210,26 +214,16 @@ export const CustomInfoCard = ({
         </Menu>
       )}
 
-      <CardContent
-        sx={{
-          flexGrow: 1,
-          overflowY: 'auto',
-          fontFamily: 'Roboto',
-          color: isDarkTheme ? '#FFFFFF' : '#262626',
-          padding: '24px',
-        }}
-      >
+      <CardContent className={classes.cardContent}>
         {children}
       </CardContent>
 
-      <CardActions
-        sx={{
-          borderTop: `1px solid ${borderColor}`,
-          height: '84px',
-          padding: '24px',
-          justifyContent: 'flex-end',
-        }}
-      >
+      <CardActions style={{
+        borderTop: `1px solid ${borderColor}`,
+        height: '84px',
+        padding: '24px',
+        justifyContent: 'flex-end',
+      }}>
         <Box sx={{ marginLeft: 'auto' }}>
           {renderSourceButton()}
         </Box>
