@@ -49,25 +49,23 @@ const IssueTypesGrid = ({ issues }: { issues: IssueType[] | undefined }) => {
   const displayIssues = issues?.filter(issue => issue.total > 0);
   
   return (
-    <Box sx={{ width: '100%' }}>
-      <Grid container spacing={2}>
-        {(displayIssues ?? []).map(issueType => (
-          <Grid item xs={4} sm={3} md={2} key={issueType.name}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Status name={issueType.name} iconUrl={issueType.iconUrl} />
-              <Typography variant="h4">{issueType.total}</Typography>
-            </Box>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
+    <Grid container spacing={2}>
+      {(displayIssues ?? []).map(issueType => (
+        <Grid item xs={4} sm={3} md={2} key={issueType.name}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Status name={issueType.name} iconUrl={issueType.iconUrl} />
+            <Typography variant="h4">{issueType.total}</Typography>
+          </Box>
+        </Grid>
+      ))}
+    </Grid>
   );
 };
 
@@ -119,7 +117,6 @@ export const JiraOverviewCard = () => {
           fontSize: '0.75rem',
           position: 'relative',
           minHeight: '200px',
-          width: '100%',
           overflow: 'hidden',
         }}>
           <IssueTypesGrid issues={issues} />
