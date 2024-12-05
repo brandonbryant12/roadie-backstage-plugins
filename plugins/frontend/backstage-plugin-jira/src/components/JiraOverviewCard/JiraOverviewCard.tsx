@@ -49,23 +49,30 @@ const IssueTypesGrid = ({ issues }: { issues: IssueType[] | undefined }) => {
   const displayIssues = issues?.filter(issue => issue.total > 0);
   
   return (
-    <Grid container spacing={2} wrap="wrap">
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 2,
+        justifyContent: 'center',
+      }}
+    >
       {(displayIssues ?? []).map(issueType => (
-        <Grid item xs={6} sm={4} md={3} lg={2} key={issueType.name}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Status name={issueType.name} iconUrl={issueType.iconUrl} />
-            <Typography variant="h4">{issueType.total}</Typography>
-          </Box>
-        </Grid>
+        <Box
+          key={issueType.name}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 1,
+            minWidth: '80px',
+          }}
+        >
+          <Status name={issueType.name} iconUrl={issueType.iconUrl} />
+          <Typography variant="h4">{issueType.total}</Typography>
+        </Box>
       ))}
-    </Grid>
+    </Box>
   );
 };
 
@@ -117,6 +124,8 @@ export const JiraOverviewCard = () => {
           fontSize: '0.75rem',
           position: 'relative',
           minHeight: '200px',
+          width: '100%',
+          overflow: 'hidden',
         }}>
           <IssueTypesGrid issues={issues} />
         </Box>
