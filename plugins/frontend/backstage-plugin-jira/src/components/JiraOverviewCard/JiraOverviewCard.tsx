@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Avatar,
   Box,
@@ -10,7 +10,6 @@ import { Progress } from '@backstage/core-components';
 import { useEntity } from '@backstage/plugin-catalog-react';
 import { useProjectInfo } from '../../hooks';
 import { Status } from './components/Status';
-import { Selectors } from './components/Selectors';
 import { CustomInfoCard } from '../CustomInfoCard/CustomInfoCard';
 
 const JIRA_PROJECT_KEY_ANNOTATION = 'jira/project-key';
@@ -28,10 +27,6 @@ type IssueType = {
   name: string;
   iconUrl: string;
   total: number;
-};
-
-type JiraCardOptionalProps = {
-  hideIssueFilter?: boolean;
 };
 
 const CardProjectDetails = ({
@@ -54,12 +49,11 @@ const IssueTypesGrid = ({ issues }: { issues: IssueType[] | undefined }) => {
   const displayIssues = issues?.filter(issue => issue.total > 0);
   
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={2} wrap="wrap">
       {(displayIssues ?? []).map(issueType => (
-        <Grid item xs key={issueType.name}>
+        <Grid item xs={6} sm={4} md={3} lg={2} key={issueType.name}>
           <Box
             sx={{
-              width: 100,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -75,10 +69,8 @@ const IssueTypesGrid = ({ issues }: { issues: IssueType[] | undefined }) => {
   );
 };
 
-
-export const JiraOverviewCard = ({ hideIssueFilter }: JiraCardOptionalProps) => {
+export const JiraOverviewCard = () => {
   const { entity } = useEntity();
-  const [statusesNames, setStatusesNames] = useState<Array<string>>([]);
   
   const projectKey = entity.metadata?.annotations?.[JIRA_PROJECT_KEY_ANNOTATION];
   const component = entity.metadata?.annotations?.[JIRA_COMPONENT_ANNOTATION];
@@ -89,8 +81,7 @@ export const JiraOverviewCard = ({ hideIssueFilter }: JiraCardOptionalProps) => 
     issues,
     projectLoading,
     projectError,
-    fetchProjectInfo,
-  } = useProjectInfo(projectKey, component, label, statusesNames);
+  } = useProjectInfo(projectKey, component, label, []);
 
   if (!projectKey) {
     return (
@@ -127,14 +118,6 @@ export const JiraOverviewCard = ({ hideIssueFilter }: JiraCardOptionalProps) => 
           position: 'relative',
           minHeight: '200px',
         }}>
-          {!hideIssueFilter && (
-            <Selectors
-              projectKey={projectKey}
-              statusesNames={statusesNames}
-              setStatusesNames={setStatusesNames}
-              fetchProjectInfo={fetchProjectInfo}
-            />
-          )}
           <IssueTypesGrid issues={issues} />
         </Box>
       ) : null}
