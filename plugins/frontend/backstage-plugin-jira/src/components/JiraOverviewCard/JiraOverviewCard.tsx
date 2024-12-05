@@ -49,23 +49,41 @@ const IssueTypesGrid = ({ issues }: { issues: IssueType[] | undefined }) => {
   const displayIssues = issues?.filter(issue => issue.total > 0);
   
   return (
-    <Grid container spacing={2}>
-      {(displayIssues ?? []).map(issueType => (
-        <Grid item xs={4} sm={3} md={2} key={issueType.name}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
+    <Box width="100%" overflow="hidden">
+      <Grid 
+        container 
+        spacing={2} 
+        style={{ 
+          width: '100%',
+          margin: 0,
+        }}
+      >
+        {(displayIssues ?? []).map(issueType => (
+          <Grid 
+            item 
+            xs={4} 
+            sm={3} 
+            md={2} 
+            key={issueType.name}
+            style={{
+              paddingTop: 16,
+              paddingBottom: 16,
             }}
           >
-            <Status name={issueType.name} iconUrl={issueType.iconUrl} />
-            <Typography variant="h4">{issueType.total}</Typography>
-          </Box>
-        </Grid>
-      ))}
-    </Grid>
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              width="100%"
+            >
+              <Status name={issueType.name} iconUrl={issueType.iconUrl} />
+              <Typography variant="h4">{issueType.total}</Typography>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 };
 
@@ -98,7 +116,7 @@ export const JiraOverviewCard = () => {
       title="Jira"
       subheader={
         project && (
-          <Box>
+          <Box width="100%">
             <CardProjectDetails project={project} component={component ?? ''} />
           </Box>
         )
@@ -112,13 +130,16 @@ export const JiraOverviewCard = () => {
         </Alert>
       ) : null}
       {project && issues ? (
-        <Box sx={{ 
-          flexGrow: 1, 
-          fontSize: '0.75rem',
-          position: 'relative',
-          minHeight: '200px',
-          overflow: 'hidden',
-        }}>
+        <Box
+          width="100%"
+          sx={{ 
+            flexGrow: 1, 
+            fontSize: '0.75rem',
+            position: 'relative',
+            minHeight: '200px',
+            overflow: 'hidden',
+          }}
+        >
           <IssueTypesGrid issues={issues} />
         </Box>
       ) : null}
